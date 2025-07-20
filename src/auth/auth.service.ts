@@ -6,9 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthRegisterDTO } from './dto/auth.register.dto';
 import * as bcrypt from 'bcrypt';
-import { StatusEnum } from 'src/utils/enums/StatusEnum';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +24,7 @@ export class AuthService {
       {
         expiresIn: '7 days',
         subject: String(user.id),
-        issuer: 'LyraAPP - Login',
+        issuer: 'Modular - Login',
         audience: 'users',
       },
     );
@@ -106,31 +104,6 @@ export class AuthService {
     });
 
     return this.createToken(user);
-  }
-
-  async register(data: AuthRegisterDTO) {
-    const { email, fullName, password } = data;
-
-    try {
-      const salt = await bcrypt.genSalt();
-
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      const user = await this.prisma.user.create({
-        data: {
-          email,
-          fullName,
-          password: hashedPassword,
-          status: StatusEnum.PENDING,
-        },
-      });
-
-      return this.createToken(user);
-    } catch (error) {
-      console.error('Erro ao registrar usuário:', error);
-
-      throw new Error('Erro ao registrar usuário. Tente novamente.');
-    }
   }
 
   async verifyEmailAlreadyExists(email: string) {
