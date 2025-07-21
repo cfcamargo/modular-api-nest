@@ -1,15 +1,95 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { StatusEnum } from 'src/utils/enums/StatusEnum';
+import { v4 as uuidV4 } from 'uuid';
+import { MailService } from 'src/mail/mail.service';
+import { UserRequestDTO } from './dto/user-request.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly mailService: MailService,
+  ) {}
+
+  async create(createUserDto: CreateUserDto) {
+    const existing = await this.prismaService.user.findUnique({
+      where: { email: createUserDto.email },
+    });
+
+    if (existing) {
+      throw new ConflictException('E-mail já está em uso');
+    }
+
+    const activationKey = uuidV4();
+
+    try {
+      const result = await this.prismaService.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            ...createUserDto,
+            activationKey,
+            status: StatusEnum.PENDING,
+          },
+        });
+
+        await this.mailService.sendAccountActivation(
+          user.fullName,
+          user.email,
+          activationKey,
+        );
+
+        return user;
+      });
+
+      return {
+        statusCode: 201,
+        message: 'Usuário criado com sucesso!',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Erro ao criar usuário: ' + error.message,
+      );
+    }
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll(request: UserRequestDTO) {
+    const { page = 1, perPage = 20, searchTerm } = request;
+    const skip = (Number(page) - 1) * Number(perPage);
+
+    const where: Prisma.UserWhereInput = {};
+
+    if (searchTerm) {
+      where.fullName = {
+        contains: searchTerm,
+        mode: 'insensitive',
+      };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prismaService.user.findMany({
+        where,
+        skip,
+        take: Number(perPage),
+      }),
+
+      this.prismaService.user.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      perPage,
+      lastPage: Math.ceil(total / perPage),
+    };
   }
 
   findOne(id: number) {
@@ -23,4 +103,7 @@ export class UserService {
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
+}
+function uuidv4() {
+  throw new Error('Function not implemented.');
 }

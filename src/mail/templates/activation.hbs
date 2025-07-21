@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Código de Verificação</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 10px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    h1 {
+      color: #22c55e;
+    }
+    p {
+      margin-bottom: 20px;
+    }
+    .code {
+      font-size: 20px;
+      font-weight: bold;
+      color: #d9534f;
+    }
+    .btn {
+      padding: 0.875rem 1rem;
+      font-weight: bold;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    img {
+      padding-top: 3rem;
+      width: 400px;
+    }
+
+    small {
+      color: #d9534f;
+    }
+  </style>
+</head>
+<body>
+  {{!-- <img src="../../images/logo-verde.png" alt=""> --}}
+  <h1>Olá!</h1>
+
+  <p>Vamos continuar seu cadastro?</p>
+
+  <a href="{{activationUrl}}" class="btn">
+    Completar Cadastro
+  </a>
+
+  <p>Clique no botão acima e preencha seu cadastro.</p>
+
+  <p>O código expira em <strong>2 horas</strong>.</p>
+
+  <p>
+    Caso você não tenha solicitado, desconsidere este e-mail.
+  </p>
+
+  <small>Caso o botão não funcione, cole o link no seu navegador</small>
+  <br/>
+  <small>{{activationUrl}}</small>
+
+  <p>
+    Atenciosamente, <br/>
+    Equipe Modular.
+  </p>
+</body>
+</html>
