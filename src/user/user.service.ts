@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -92,8 +93,20 @@ export class UserService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
+    return {
+      user,
+    };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
@@ -103,7 +116,4 @@ export class UserService {
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
-}
-function uuidv4() {
-  throw new Error('Function not implemented.');
 }

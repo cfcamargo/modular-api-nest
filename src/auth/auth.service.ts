@@ -6,13 +6,14 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { BcryptService } from './hashing/bcrypt.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly brcryptService: BcryptService,
   ) {}
 
   createToken(user: User) {
@@ -59,17 +60,20 @@ export class AuthService {
       throw new UnauthorizedException('Credencias incorretas.');
     }
 
-    const passwordIsValid = await bcrypt.compare(userPassword, user.password);
+    const passwordIsValid = await this.brcryptService.compare(
+      userPassword,
+      user.password!,
+    );
 
     if (!passwordIsValid) {
       throw new UnauthorizedException('Credencias incorretas.');
     }
 
     const { password, ...data } = user;
-    const acessToken = this.createToken(user);
+    const accessToken = this.createToken(user);
 
     return {
-      acessToken,
+      accessToken,
       user: data,
     };
   }
@@ -104,19 +108,5 @@ export class AuthService {
     });
 
     return this.createToken(user);
-  }
-
-  async verifyEmailAlreadyExists(email: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email: email,
-      },
-    });
-
-    if (user) {
-      return true;
-    }
-
-    return false;
   }
 }
