@@ -23,7 +23,9 @@ export class ProductService {
 
 	async findAll(request: ProductRequestDTO) {
 		const { page = 1, perPage = 20, searchTerm } = request;
-		const skip = (Number(page) - 1) * Number(perPage);
+		const pageNumber = Number(page) || 1;
+		const perPageNumber = Number(perPage) || 20;
+		const skip = (pageNumber - 1) * perPageNumber;
 
 		const where: Prisma.ProductWhereInput = {};
 
@@ -38,7 +40,7 @@ export class ProductService {
 			this.prismaService.product.findMany({
 				where,
 				skip,
-				take: Number(perPage),
+				take: perPageNumber,
 			}),
 
 			this.prismaService.product.count({ where }),
@@ -51,9 +53,9 @@ export class ProductService {
 		return {
 			data: transformedData,
 			total,
-			page,
-			perPage,
-			lastPage: Math.ceil(total / perPage),
+			page: pageNumber,
+			perPage: perPageNumber,
+			lastPage: Math.ceil(total / perPageNumber),
 		};
 	}
 

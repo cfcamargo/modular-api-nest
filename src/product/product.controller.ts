@@ -13,7 +13,7 @@ import { AuthGuard } from "@nestjs/passport";
 import { ProductService } from "./product.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
-import { UserRequestDTO } from "src/user/dto/user-request.dto";
+import { ProductRequestDTO } from "./dto/product-request.dto";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("products")
@@ -26,7 +26,7 @@ export class ProductController {
 	}
 
 	@Get()
-	findAll(@Query() request: UserRequestDTO) {
+	findAll(@Query() request: ProductRequestDTO) {
 		return this.productService.findAll(request);
 	}
 

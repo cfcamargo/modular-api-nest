@@ -92,9 +92,7 @@ export class StockService {
 		};
 	}
 
-	findOne(id: number) {
-		return `This action returns a #${id} stock`;
-	}
+	findOne(id: number) {}
 
 	update(id: number, updateStockDto: UpdateStockDto) {
 		return `This action updates a #${id} stock`;
