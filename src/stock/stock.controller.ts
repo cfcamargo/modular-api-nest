@@ -1,19 +1,10 @@
 import {
-	Controller,
-	Get,
-	Post,
-	Body,
-	Patch,
-	Param,
-	Delete,
-	UseGuards,
-	Query,
+  Controller, Post,
+  Body, Param, UseGuards
 } from "@nestjs/common";
 import { StockService } from "./stock.service";
-import { CreateStockDto } from "./dto/create-stock.dto";
-import { UpdateStockDto } from "./dto/update-stock.dto";
+import { CreateStockMovementDto } from "./dto/create-stock-movement.dto";
 import { AuthGuard } from "@nestjs/passport";
-import { ListStockMovementsDto } from "./dto/list-stock-movements.dto";
 
 @UseGuards(AuthGuard("jwt"))
 @Controller("stock-movements")
@@ -21,27 +12,12 @@ export class StockController {
 	constructor(private readonly stockService: StockService) {}
 
 	@Post()
-	create(@Body() createStockDto: CreateStockDto) {
-		return this.stockService.create(createStockDto);
-	}
+  create(@Body() dto: CreateStockMovementDto) {
+    return this.stockService.createMovement(dto);
+  }
 
-	@Get()
-	findAll(@Query() request: ListStockMovementsDto) {
-		return this.stockService.findAll(request);
-	}
-
-	@Get(":id")
-	findOne(@Param("id") id: string) {
-		return this.stockService.findOne(+id);
-	}
-
-	@Patch(":id")
-	update(@Param("id") id: string, @Body() updateStockDto: UpdateStockDto) {
-		return this.stockService.update(+id, updateStockDto);
-	}
-
-	@Delete(":id")
-	remove(@Param("id") id: string) {
-		return this.stockService.remove(+id);
-	}
+  @Post(':id/reverse')
+  reverse(@Param('id') id: string, @Body('userId') userId: string) {
+    return this.stockService.reverseMovement(id, userId);
+  }
 }

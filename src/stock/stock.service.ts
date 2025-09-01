@@ -1,104 +1,137 @@
-import { Injectable } from "@nestjs/common";
-import { CreateStockDto } from "./dto/create-stock.dto";
-import { UpdateStockDto } from "./dto/update-stock.dto";
-import { ListStockMovementsDto } from "./dto/list-stock-movements.dto";
-import { PrismaService } from "src/prisma/prisma.service";
-import { Prisma } from "@prisma/client";
+// stock.service.ts
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Decimal } from '@prisma/client/runtime/library';
+import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { StockMovementType } from '@prisma/client';
 
 @Injectable()
 export class StockService {
-	constructor(private readonly prismaService: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
-	create(createStockDto: CreateStockDto) {
-		return "This action adds a new stock";
-	}
+  private isEntry(type: StockMovementType) {
+    return ['PURCHASE','ADJUST_IN','RETURN_FROM_CLIENT','TRANSFER_IN'].includes(type);
+  }
 
-	async findAll(request: ListStockMovementsDto) {
-		const { productId, movmentType, startDate, endDate, perPage, page } =
-			request;
+  async createMovement(dto: CreateStockMovementDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: dto.productId },
+        select: { id: true, stockOnHand: true, avgUnitCost: true },
+      });
+      if (!product) throw new NotFoundException('Produto não encontrado');
 
-		const where: Prisma.StockMovementWhereInput = {};
+      const qty = new Decimal(dto.quantity);
+      if (qty.lte(0)) throw new BadRequestException('Quantidade deve ser > 0');
 
-		if (productId) {
-			where.productId = productId;
-		}
+      const isEntry = this.isEntry(dto.type);
 
-		if (movmentType) {
-			where.type = movmentType as any;
-		}
+      if (isEntry) {
+        if (dto.unitCost == null) {
+          throw new BadRequestException('unitCost é obrigatório em entradas');
+        }
+      } else {
+        if (new Decimal(product.stockOnHand).lt(qty)) {
+          throw new BadRequestException('Estoque insuficiente');
+        }
+      }
 
-		if (startDate || endDate) {
-			where.createdAt = {};
-			if (startDate) {
-				where.createdAt.gte = new Date(startDate);
-			}
-			if (endDate) {
-				where.createdAt.lte = new Date(endDate);
-			}
-		}
+      let unitSalePrice: Decimal | null = dto.unitSalePrice ? new Decimal(dto.unitSalePrice) : null;
+      let unitCost: Decimal | null = dto.unitCost ? new Decimal(dto.unitCost) : null;
 
-		const pageNumber = Number(page) || 1;
-		const perPageNumber = Number(perPage) || 10;
-		const skip = (pageNumber - 1) * perPageNumber;
+      if (!unitSalePrice && dto.marginPct && unitCost) {
+        const margin = new Decimal(dto.marginPct);
+        unitSalePrice = unitCost.mul(margin.plus(1));
+      }
 
-		const [data, total] = await Promise.all([
-			this.prismaService.stockMovement.findMany({
-				where,
-				skip,
-				take: perPageNumber,
-				include: {
-					product: {
-						select: {
-							id: true,
-							name: true,
-							brand: true,
-							unit: true,
-						},
-					},
-					user: {
-						select: {
-							id: true,
-							fullName: true,
-							email: true,
-						},
-					},
-				},
-				orderBy: {
-					createdAt: "desc",
-				},
-			}),
-			this.prismaService.stockMovement.count({ where }),
-		]);
+      let totalCost: Decimal | null = null;
+      let totalRevenue: Decimal | null = null;
 
-		const transformedData = data.map((movement) => ({
-			...movement,
-			quantity: Number(movement.quantity),
-			unitCost: movement.unitCost ? Number(movement.unitCost) : null,
-			unitSalePrice: movement.unitSalePrice
-				? Number(movement.unitSalePrice)
-				: null,
-			totalCost: movement.totalCost ? Number(movement.totalCost) : null,
-			totalRevenue: movement.totalRevenue
-				? Number(movement.totalRevenue)
-				: null,
-		}));
+      let newStockOnHand = new Decimal(product.stockOnHand);
+      let newAvgCost = new Decimal(product.avgUnitCost);
 
-		return {
-			data: transformedData,
-			total,
-			page: pageNumber,
-			perPage: perPageNumber,
-			totalPages: Math.ceil(total / perPageNumber),
-		};
-	}
+      if (isEntry) {
+        totalCost = unitCost!.mul(qty);
+        const oldValue = newAvgCost.mul(newStockOnHand);
+        const newValue = oldValue.plus(totalCost);
+        newStockOnHand = newStockOnHand.plus(qty);
+        newAvgCost = newStockOnHand.gt(0) ? newValue.div(newStockOnHand) : new Decimal(0);
+      } else {
+        totalCost = newAvgCost.mul(qty); // CMV
+        if (unitSalePrice) totalRevenue = unitSalePrice.mul(qty);
+        newStockOnHand = newStockOnHand.minus(qty);
+        // avg permanece
+      }
 
-	findOne(id: number) {}
+      const movement = await tx.stockMovement.create({
+        data: {
+          productId: dto.productId,
+          type: dto.type,
+          quantity: qty,
+          unitCost: unitCost,
+          unitSalePrice: unitSalePrice,
+          totalCost: totalCost,
+          totalRevenue: totalRevenue,
+          marginPct: dto.marginPct ? new Decimal(dto.marginPct) : null,
+          description: dto.description ?? null,
+          userId: dto.userId,
+          supplierId: dto.supplierId ?? null,
+          originType: dto.originType ?? null,
+          originId: dto.originId ?? null,
+        },
+      });
 
-	update(id: number, updateStockDto: UpdateStockDto) {
-		return `This action updates a #${id} stock`;
-	}
+      await tx.product.update({
+        where: { id: product.id },
+        data: {
+          stockOnHand: newStockOnHand,
+          avgUnitCost: newAvgCost,
+        },
+      });
 
-	remove(id: number) {
-		return `This action removes a #${id} stock`;
-	}
+      return movement;
+    });
+  }
+
+  async reverseMovement(movementId: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const m = await tx.stockMovement.findUnique({ where: { id: movementId }});
+      if (!m) throw new NotFoundException('Movimentação não encontrada');
+      if (m.reversedAt) throw new BadRequestException('Movimentação já estornada');
+
+      const oppositeType: StockMovementType = ((): any => {
+        switch (m.type) {
+          case 'PURCHASE': return 'RETURN_TO_SUPPLIER';
+          case 'RETURN_TO_SUPPLIER': return 'PURCHASE';
+          case 'SALE': return 'RETURN_FROM_CLIENT';
+          case 'RETURN_FROM_CLIENT': return 'SALE';
+          case 'ADJUST_IN': return 'ADJUST_OUT';
+          case 'ADJUST_OUT': return 'ADJUST_IN';
+          case 'TRANSFER_IN': return 'TRANSFER_OUT';
+          case 'TRANSFER_OUT': return 'TRANSFER_IN';
+        }
+      })();
+
+      const reversed = await this.createMovement({
+        productId: m.productId,
+        type: oppositeType,
+        quantity: m.quantity.toString(),
+        unitCost: m.unitCost?.toString(),
+        unitSalePrice: m.unitSalePrice?.toString(),
+        marginPct: m.marginPct?.toString(),
+        description: `Estorno de ${m.id}`,
+        userId,
+        supplierId: m.supplierId ?? undefined,
+        originType: 'REVERSAL',
+        originId: m.id,
+      });
+
+      await tx.stockMovement.update({
+        where: { id: m.id },
+        data: { reversedAt: new Date(), reversedById: reversed.id },
+      });
+
+      return reversed;
+    });
+  }
 }
