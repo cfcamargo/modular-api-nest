@@ -1,12 +1,13 @@
-import { IsNumber, IsString, Min } from "class-validator";
+import { IsNumber, IsOptional, IsString, Min, MinLength } from "class-validator";
 import { ProductUnitType } from "src/common/_types/ProductUnity";
 
 export class CreateProductDto {
 	@IsString()
-	@Min(3)
+  @MinLength(3)
 	name: string;
 
 	@IsString()
+  @IsOptional()
 	description: string;
 
 	@IsString()

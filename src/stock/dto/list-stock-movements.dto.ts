@@ -1,36 +1,35 @@
-import {
-	IsDateString,
-	IsInt,
-	IsOptional,
-	IsString,
-	Min,
-} from "class-validator";
-import { Transform } from "class-transformer";
+import { Transform } from 'class-transformer';
+import { IsEnum, IsISO8601, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { StockMovementType } from '@prisma/client';
 
-export class ListStockMovementsDto {
-	@IsString()
-	@IsOptional()
-	productId?: string;
+export class ListMovementsDto {
+  @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsString()
+  productId?: string;
 
-	@IsString()
-	@IsOptional()
-	movmentType?: string;
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsEnum(StockMovementType)
+  type?: StockMovementType;
 
-	@IsDateString()
-	@IsOptional()
-	startDate?: string;
+  @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsISO8601()
+  from?: string; // inclusive
 
-	@IsDateString()
-	@IsOptional()
-	endDate?: string;
+  @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsISO8601()
+  to?: string;   // inclusive
 
-	@Transform(({ value }) => Number(value) || 10)
-	@IsInt()
-	@Min(5)
-	perPage: number = 10;
+  @IsOptional()
+  @Transform(({ value }) => value ? parseInt(value, 10) : 1)
+  @IsInt() @Min(1)
+  page: number = 1;
 
-	@Transform(({ value }) => Number(value) || 1)
-	@IsInt()
-	@Min(1)
-	page: number = 1;
+  @IsOptional()
+  @Transform(({ value }) => value ? Math.min(parseInt(value, 10), 100) : 20)
+  @IsInt() @Min(1)
+  perPage: number = 20;
 }

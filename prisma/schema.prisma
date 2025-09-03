@@ -43,7 +43,7 @@ model Product {
   name          String
   brand         String
   unit          Unit
-  description   String
+  description   String?
   status        Int
   marginPercent Decimal? @db.Decimal(5, 2) // 30.00 = 30%
   // NOVOS (cache p/ performance + cálculo rápido)

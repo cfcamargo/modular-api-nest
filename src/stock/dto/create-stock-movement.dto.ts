@@ -5,7 +5,7 @@ export class CreateStockMovementDto {
   @IsString() productId: string;
 
   @IsEnum(StockMovementType) type: StockMovementType;
-  @IsNumberString() quantity: string; // Decimal como string
+  @IsNumberString() quantity: string;
 
   @IsOptional() @IsNumberString() unitCost?: string;
   @IsOptional() @IsNumberString() unitSalePrice?: string;

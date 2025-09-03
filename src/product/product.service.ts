@@ -76,19 +76,24 @@ export class ProductService {
 	}
 
 	async update(id: string, updateProductDto: UpdateProductDto) {
-		// const { price, ...rest } = updateProductDto;
-		// const updateData: any = { ...rest };
-		// if (price !== undefined) {
-		// 	updateData.salePrice = price;
-		// }
-		// return this.prismaService.product.update({
-		// 	where: { id },
-		// 	data: updateData,
-		// });
+    const product = await this.prismaService.product.findUnique({
+      where: {
+        id
+      }
+    })
+
+    if(!product){
+      throw new NotFoundException("Produto nao encontrato")
+    }
+
+		return await this.prismaService.product.update({
+			where: { id },
+			data: updateProductDto,
+		});
 	}
 
 	async remove(id: string) {
-		return this.prismaService.product.delete({
+		return await this.prismaService.product.delete({
 			where: { id },
 		});
 	}

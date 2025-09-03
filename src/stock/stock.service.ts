@@ -3,7 +3,8 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { Decimal } from '@prisma/client/runtime/library';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StockMovementType } from '@prisma/client';
+import { Prisma, StockMovementType } from '@prisma/client';
+import { ListMovementsDto } from './dto/list-stock-movements.dto';
 
 @Injectable()
 export class StockService {
@@ -133,5 +134,57 @@ export class StockService {
 
       return reversed;
     });
+  }
+
+  async listMovments(dto: ListMovementsDto){
+    let createdAt: Prisma.DateTimeFilter | undefined;
+    if (dto.from || dto.to) {
+      createdAt = {};
+      if (dto.from) createdAt.gte = new Date(dto.from); 
+      if (dto.to) {
+        const end = new Date(dto.to);
+        end.setHours(23, 59, 59, 999);                
+        createdAt.lte = end;
+      }
+    }
+
+    const where: Prisma.StockMovementWhereInput = {
+      ...(dto.productId ? { productId: dto.productId } : {}),
+      ...(dto.type ? { type: dto.type } : {}),
+      ...(createdAt ? { createdAt } : {}),
+    };
+
+    const page = dto.page ?? 1;
+    const perPage = dto.perPage ?? 20;
+    const skip = (page - 1) * perPage;
+    const take = perPage;
+
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.stockMovement.count({ where }),
+      this.prisma.stockMovement.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: {
+          product: true,
+          supplier: true,
+          user: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    const currentPage = Math.min(page, totalPages);
+
+    return {
+      data: items,
+      page: currentPage,
+      perPage,
+      total,
+      totalPages,
+      hasNext: currentPage < totalPages,
+      hasPrev: currentPage > 1,
+    };
   }
 }
