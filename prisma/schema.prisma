@@ -69,17 +69,19 @@ enum StockMovementType {
 }
 
 enum SupplierType {
-  PJ
-  PF
+  CNPJ
+  CPF
 }
 
 model Supplier {
   id             String          @id @default(cuid())
-  type           SupplierType
-  socialName     String
+  type           SupplierType    @default(CNPJ)
+  name           String
+  fantasyName    String?
   document       String          @unique
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  status         Int             @default(1)
   stockMovements StockMovement[]
 }
 

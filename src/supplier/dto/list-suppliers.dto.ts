@@ -4,7 +4,6 @@ import { IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 export class ListSuppliersDto {
 	@IsString()
 	@IsOptional()
-	@MinLength(3)
 	searchTerm?: string;
 
 	@Transform(({ value }) => Number(value) || 20)

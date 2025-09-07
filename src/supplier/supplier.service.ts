@@ -3,14 +3,26 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateSupplierDto } from "./dto/create-supplier.dto";
 import { UpdateSupplierDto } from "./dto/update-supplier.dto";
 import { ListSuppliersDto } from "./dto/list-suppliers.dto";
+import { StatusEnum } from "src/utils/enums/StatusEnum";
+import { SupplierType } from "@prisma/client";
 
 @Injectable()
 export class SupplierService {
 	constructor(private readonly prisma: PrismaService) {}
 
 	async create(createSupplierDto: CreateSupplierDto) {
+    const status = StatusEnum.ACTIVE;
+
+    const type = createSupplierDto.type === "cnpj" ? SupplierType.CNPJ : SupplierType.CPF
+
 		return this.prisma.supplier.create({
-			data: createSupplierDto,
+			data: {
+        document: createSupplierDto.document,
+        name: createSupplierDto.name,
+        fantasyName: createSupplierDto.fantasyName,
+        status,
+        type
+      },
 		});
 	}
 
@@ -89,9 +101,16 @@ export class SupplierService {
 			throw new NotFoundException("Fornecedor não encontrado");
 		}
 
+     const type = updateSupplierDto.type === "cnpj" ? SupplierType.CNPJ : SupplierType.CPF
+
 		return this.prisma.supplier.update({
 			where: { id },
-			data: updateSupplierDto,
+			data: {
+        document: updateSupplierDto.document,
+        fantasyName: updateSupplierDto.fantasyName,
+        name: updateSupplierDto.name,
+        type: type,
+      },
 		});
 	}
 
