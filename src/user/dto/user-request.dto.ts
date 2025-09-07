@@ -14,6 +14,5 @@ export class UserRequestDTO {
 
 	@IsOptional()
 	@IsString()
-	@MinLength(3)
 	searchTerm?: string;
 }
