@@ -27,7 +27,7 @@ COPY prisma ./prisma
 RUN pnpm install --offline
 
 # ⚠️ Use o Prisma CLI local (mesma versão do @prisma/client) — NÃO use dlx aqui
-RUN pnpm dlx prisma generate
+RUN pnpm prisma generate
 
 # Build Nest
 RUN pnpm build
