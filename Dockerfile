@@ -27,7 +27,7 @@ COPY prisma ./prisma
 RUN pnpm install --offline
 
 # ⚠️ Use o Prisma CLI local (mesma versão do @prisma/client) — NÃO use dlx aqui
-RUN pnpm prisma generate
+RUN pnpm dlx prisma generate
 
 # Build Nest
 RUN pnpm build
@@ -59,5 +59,5 @@ RUN pnpm fetch --prod && pnpm install --offline --prod
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 3334
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
