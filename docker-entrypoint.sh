@@ -18,4 +18,4 @@ else
 fi
 
 echo "🚀 Start API..."
-exec node dist/main.js
+exec node dist/src/main.js
