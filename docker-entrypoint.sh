@@ -1,22 +1,22 @@
+#!/usr/bin/env bash
 set -e
 
 echo "🔧 Prisma generate..."
-npx prisma generate
+pnpm dlx prisma generate
 
 echo "🗃️  Prisma migrate deploy..."
-npx prisma migrate deploy
+pnpm dlx prisma migrate deploy
 
-# Rode o seed se existir script configurado
-if npm run | grep -q "db:seed"; then
-  echo "🌱 Prisma db seed..."
-  npm run db:seed
+# Seed (se configurado)
+if pnpm -s run | grep -q "db:seed"; then
+  echo "🌱 Prisma db seed (npm script db:seed)..."
+  pnpm run db:seed
 else
-  # fallback padrão do Prisma (se tiver "prisma": { "seed": "node prisma/seed.js" })
-  if [ -f "prisma/seed.js" ] || [ -f "prisma/seed.ts" ]; then
-    echo "🌱 Prisma db seed (npx prisma db seed)..."
-    npx prisma db seed
+  if [ -f "prisma/seed.ts" ] || [ -f "prisma/seed.js" ]; then
+    echo "🌱 Prisma db seed (dlx prisma)..."
+    pnpm dlx prisma db seed
   else
-    echo "⚠️  Seed não configurado (pulando)."
+    echo "⚠️  Seed não configurado - pulando."
   fi
 fi
 
