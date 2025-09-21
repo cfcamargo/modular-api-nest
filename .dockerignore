@@ -1,14 +1,28 @@
+
+# Dependências locais / ruído
 node_modules
-npm-debug.log
-Dockerfile
+npm-debug.log*
+
+# (mantenha Dockerfile e entrypoint no contexto!)
+# docker-entrypoint.sh  ← NÃO ignore
+# Dockerfile            ← NÃO ignore
 docker-compose.yml
-docker-entrypoint.sh
+
+# Git
 .git
 .gitignore
+
+# Build output: ignore tudo dentro de dist, exceto o .gitkeep
 dist/*
 !dist/.gitkeep
+
+# Cobertura
 coverage
+
+# Variáveis de ambiente (não subir)
 .env
 .env.*
+
+# IDEs
 .vscode
 .idea
