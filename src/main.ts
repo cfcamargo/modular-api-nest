@@ -3,17 +3,32 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app/app.module';
 import * as cookieParser from 'cookie-parser';
 
-const WHITE_LIST = [
-  'https://qa.grupomodularms.com.br',
-  'http://qa.grupomodularms.com.br',
-  'https://app.grupomodularms.com.br',
-  'http://app.grupomodularms.com.br',
-  'http://localhost:5173',
-];
+const isProd = process.env.NODE_ENV === 'production';
+
+// regex: http(s)://(qa|app).grupomodularms.com.br(:porta opcional)
+const RGX_APP_QA = /^https?:\/\/(qa|app)\.grupomodularms\.com\.br(?::\d+)?$/i;
+
+const FRONT_EXACT = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.use(cookieParser());
+
+  app.enableCors({
+    credentials: true,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+
+      if (RGX_APP_QA.test(origin)) return cb(null, true);
+      if (!isProd && FRONT_EXACT.includes(origin)) return cb(null, true);
+
+      return cb(new Error(`CORS: Origin não permitido: ${origin}`), false);
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    maxAge: 600,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -22,11 +37,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
-  app.enableCors({
-    origin: WHITE_LIST, // ou seu domínio
-    credentials: true,
-  });
 
   await app.listen(process.env.PORT ?? 3333);
 }
