@@ -1,13 +1,15 @@
-version: '3'
-
 services:
-  database:
-    image: bitnami/postgresql
+  postgres:
+    image: postgres:15
     container_name: modular_api
-    restart: always
-    ports:
-      - 5432:5432
     environment:
-      - POSTGRESQL_USERNAME=modular
-      - POSTGRESQL_PASSWORD=modular
-      - POSTGRESQL_DATABASE=modular_db
+      POSTGRES_USER: modular
+      POSTGRES_PASSWORD: modular
+      POSTGRES_DB: modular_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
