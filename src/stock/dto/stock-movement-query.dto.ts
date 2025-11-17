@@ -1,23 +1,26 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  Min,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { StockMovementType } from '@prisma/client';
 
 export class StockMovementQueryDto {
-  @IsOptional()
-  @IsString()
-  productId?: string;
-
   @IsOptional()
   @IsEnum(StockMovementType)
   type?: StockMovementType;
 
   @IsOptional()
   @IsDateString()
-  from?: string;
+  initialDate?: string;
 
   @IsOptional()
   @IsDateString()
-  to?: string;
+  endDate?: string;
 
   @IsOptional()
   @IsNumber()
@@ -31,5 +34,5 @@ export class StockMovementQueryDto {
   @Min(1, { message: 'Page size must be greater than 0' })
   @Type(() => Number)
   @Transform(({ value }) => value || 20)
-  pageSize?: number = 20;
+  perPage?: number = 20;
 }

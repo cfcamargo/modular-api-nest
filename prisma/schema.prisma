@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,6 +6,43 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// =================================================================
+// ENUMS
+// =================================================================
+
+enum Unit {
+  UN
+  M2
+  KG
+}
+
+enum StockMovementType {
+  BUY
+  SELL
+  ADJUST_IN
+  ADJUST_OUT
+  RETURN
+  PRODUCTION
+}
+
+enum SupplierType {
+  CNPJ
+  CPF
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  COMPLETED
+  SHIPPED
+  CANCELLED
+}
+
+// =================================================================
+// MODELS
+// =================================================================
 
 model User {
   id            String   @id @default(cuid())
@@ -27,15 +58,14 @@ model User {
   updatedAt     DateTime @updatedAt
   avatarURL     String?
 
-  // Relações
-  stockMovements  StockMovement[] @relation("StockMovementUser")
-  updatedProducts Product[]       @relation("ProductUpdatedBy")
-}
+  // Movimentos de estoque feitos pelo usuário
+  stockMovements Movement[] @relation("StockMovementUser")
 
-enum Unit {
-  UN
-  M2
-  KG
+  // Produtos que esse usuário atualizou
+  updatedProducts Product[] @relation("ProductUpdatedBy")
+
+  // Pedidos de venda criados por esse usuário
+  ordersCreated Order[] @relation("SalesUserOrders")
 }
 
 model Product {
@@ -45,67 +75,132 @@ model Product {
   unit          Unit
   description   String?
   status        Int
-  marginPercent Decimal? @db.Decimal(5, 2) // 30.00 = 30%
-  // NOVOS (cache p/ performance + cálculo rápido)
+  marginPercent Decimal? @db.Decimal(5, 2)
   stockOnHand   Decimal  @default(0) @db.Decimal(14, 4)
   avgUnitCost   Decimal  @default(0) @db.Decimal(14, 6)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // quem atualizou
   updatedBy     String?
-  updatedByUser User?    @relation("ProductUpdatedBy", fields: [updatedBy], references: [id])
+  updatedByUser User?   @relation("ProductUpdatedBy", fields: [updatedBy], references: [id])
 
-  stockMovements StockMovement[]
-}
-
-enum StockMovementType {
-  PURCHASE // Entrada por compra
-  SALE // Saída por venda
-  ADJUST_IN // Ajuste positivo
-  ADJUST_OUT // Ajuste negativo
-  RETURN_TO_SUPPLIER // Devolução ao fornecedor (saída)
-  RETURN_FROM_CLIENT // Devolução do cliente (entrada)
-  TRANSFER_OUT // (mantido por compatibilidade, mas não usaremos)
-  TRANSFER_IN // (idem)
-}
-
-enum SupplierType {
-  CNPJ
-  CPF
+  MovementItem MovementItem[]
+  OrderItem    OrderItem[]
 }
 
 model Supplier {
-  id             String          @id @default(cuid())
-  type           SupplierType    @default(CNPJ)
-  name           String
-  fantasyName    String?
-  document       String          @unique
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  status         Int             @default(1)
-  stockMovements StockMovement[]
+  id          String       @id @default(cuid())
+  type        SupplierType @default(CNPJ)
+  name        String
+  fantasyName String?
+  document    String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  status      Int          @default(1)
+
+  stockMovements Movement[]
 }
 
-model StockMovement {
-  id            String            @id @default(cuid())
-  productId     String
-  product       Product           @relation(fields: [productId], references: [id])
-  type          StockMovementType
-  quantity      Decimal           @db.Decimal(14, 4) // sempre positiva
-  unitCost      Decimal?          @db.Decimal(14, 6) // obrigatório em entradas
-  unitSalePrice Decimal?          @db.Decimal(14, 6) // opcional em saídas
-  totalCost     Decimal?          @db.Decimal(18, 6) // custo lançado (entrada) ou CMV (saída)
-  totalRevenue  Decimal?          @db.Decimal(18, 6) // receita (saída)
-  marginPct     Decimal?          @db.Decimal(7, 4)
-  description   String?
-  userId        String
-  user          User              @relation("StockMovementUser", fields: [userId], references: [id])
-  supplierId    String?
-  supplier      Supplier?         @relation(fields: [supplierId], references: [id])
-  originType    String? // "ORDER","INVOICE","MANUAL","REVERSAL"
-  originId      String?
-  reversedById  String?
-  reversedAt    DateTime?
-  createdAt     DateTime          @default(now())
+model Client {
+  id       String       @id @default(cuid())
+  type     SupplierType @default(CPF)
+  name     String
+  document String       @unique
+  email    String?      @unique
+  phone    String?
+  status   Int          @default(1)
 
-  @@index([productId, createdAt])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Movement {
+  id           String            @id @default(cuid())
+  type         StockMovementType
+  movementDate DateTime          @default(now())
+
+  userId String
+  user   User   @relation("StockMovementUser", fields: [userId], references: [id])
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  // lado inverso da relação 1:1 com Order
+  // (quem tem a FK é o Order)
+  order Order? @relation("OrderStockMovement")
+
+  notes String?        @db.Text
+  items MovementItem[]
+
+  @@index([type, movementDate])
+}
+
+model MovementItem {
+  id String @id @default(cuid())
+
+  movementId String
+  movement   Movement @relation(fields: [movementId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity  Decimal  @db.Decimal(10, 4)
+  costPrice Decimal? @db.Decimal(10, 2)
+  salePrice Decimal? @db.Decimal(10, 2)
+
+  @@unique([movementId, productId])
+  @@index([productId])
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  userId String
+  user   User   @relation("SalesUserOrders", fields: [userId], references: [id])
+
+  // data que vem do front
+  orderDate DateTime @default(now())
+
+  status OrderStatus @default(DRAFT)
+  notes  String?     @db.Text
+
+  // valores opcionais
+  freight  Decimal? @db.Decimal(14, 2)
+  discount Decimal? @db.Decimal(14, 2)
+
+  // relação 1:1 com movimento de saída
+  movementId    String?   @unique
+  stockMovement Movement? @relation("OrderStockMovement", fields: [movementId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id      Int    @id @default(autoincrement())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity   Decimal @db.Decimal(10, 4)
+  unitPrice  Decimal @db.Decimal(14, 2)
+  totalPrice Decimal @db.Decimal(14, 2)
+
+  unitCostAtSale Decimal? @db.Decimal(14, 6)
+
+  @@unique([orderId, productId])
 }

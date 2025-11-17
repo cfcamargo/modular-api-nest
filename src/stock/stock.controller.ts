@@ -1,31 +1,39 @@
 import {
-  Controller, Post,
-  Body, Param, UseGuards,
+  Controller,
+  Post,
+  Body,
+  Param,
+  UseGuards,
   Query,
-  Get
-} from "@nestjs/common";
-import { StockService } from "./stock.service";
-import { CreateStockMovementDto } from "./dto/create-stock-movement.dto";
-import { AuthGuard } from "@nestjs/passport";
-import { ListMovementsDto } from "./dto/list-stock-movements.dto";
+  Get,
+} from '@nestjs/common';
+import { StockService } from './stock.service';
+import { AuthGuard } from '@nestjs/passport';
+import { CreateEntryMovementDto } from './dto/create-entry-movement.dto';
+import { StockMovementQueryDto } from './dto/stock-movement-query.dto';
 
-@UseGuards(AuthGuard("jwt"))
-@Controller("stock-movements")
+@UseGuards(AuthGuard('jwt'))
+@Controller('stock-movements')
 export class StockController {
-	constructor(private readonly stockService: StockService) {}
+  constructor(private readonly stockService: StockService) {}
 
   @Get()
-  getAllMovments(@Query() dto: ListMovementsDto) {
-    return this.stockService.listMovments(dto)
+  getAllMovments(@Query() dto: StockMovementQueryDto) {
+    return this.stockService.listMovments(dto);
   }
 
-	@Post()
-  create(@Body() dto: CreateStockMovementDto) {
-    return this.stockService.createMovement(dto);
+  @Post('/create-entry')
+  createEntry(@Body() dto: CreateEntryMovementDto) {
+    return this.stockService.createEntryMovement(dto.userId, dto);
   }
 
-  @Post(':id/reverse')
-  reverse(@Param('id') id: string, @Body('userId') userId: string) {
-    return this.stockService.reverseMovement(id, userId);
+  @Post('/create-out')
+  createOut(@Body() dto: CreateEntryMovementDto) {
+    return this.stockService.createOutMovement(dto.userId, dto);
   }
+
+  // @Post(':id/reverse')
+  // reverse(@Param('id') id: string, @Body('userId') userId: string) {
+  //   return this.stockService.reverseMovement(id, userId);
+  // }
 }

@@ -1,7 +1,7 @@
 import { IsInt, IsString, Min, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class ProductRequestDTO {
+export class OrderRequestDTO {
   @Transform(({ value }) => Number(value) || 20)
   @IsInt()
   @Min(5)

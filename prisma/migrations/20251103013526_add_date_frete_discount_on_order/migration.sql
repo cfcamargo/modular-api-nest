@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "public"."Order" ADD COLUMN     "discount" DECIMAL(14,2),
+ADD COLUMN     "freight" DECIMAL(14,2),
+ADD COLUMN     "orderDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
