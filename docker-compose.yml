@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15
+    image: postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_USER: modular
       POSTGRES_PASSWORD: modular
       POSTGRES_DB: modular_db
     ports:
-      - "5432:5432"
+      - '5432:5432'

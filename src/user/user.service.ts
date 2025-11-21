@@ -12,6 +12,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { MailService } from 'src/mail/mail.service';
 import { UserRequestDTO } from './dto/user-request.dto';
 import { Prisma } from '@prisma/client';
+import { UpdateByResetCodeDto } from './dto/update-by-reset-code.dto';
 
 @Injectable()
 export class UserService {
@@ -115,5 +116,50 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  async findByResetCode(resetCode: string) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        activationKey: resetCode,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Código de ativação inválido');
+    }
+
+    return { user };
+  }
+
+  async updateByResetCode(updateByResetCodeDto: UpdateByResetCodeDto) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        activationKey: updateByResetCodeDto.resetCode,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Código de ativação inválido');
+    }
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        fullName: updateByResetCodeDto.fullName,
+        email: updateByResetCodeDto.email,
+        document: updateByResetCodeDto.document,
+        password: updateByResetCodeDto.password,
+        activationKey: null,
+      },
+    });
+
+    return {
+      user,
+      status: 201,
+      message: 'Senha atualizada com sucesso!',
+    };
   }
 }
