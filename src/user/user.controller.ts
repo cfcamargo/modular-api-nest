@@ -40,8 +40,14 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  @Patch('reset-password')
+  updateByResetCode(@Body() updateByResetCodeDto: UpdateByResetCodeDto) {
+    console.log('Update By Reset Code DTO:', updateByResetCodeDto);
+    return this.userService.updateByResetCode(updateByResetCodeDto);
+  }
+
   @UseGuards(AuthGuard('jwt'))
-  @Patch(':id')
+  @Patch('update/:id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
   }
@@ -55,11 +61,5 @@ export class UserController {
   @Get('/reset-password/:activationKey')
   resetPassword(@Param('activationKey') activationKey: string) {
     return this.userService.findByResetCode(activationKey);
-  }
-
-  @Patch('/reset-password')
-  updateByResetCode(@Body() updateByResetCodeDto: UpdateByResetCodeDto) {
-    console.log('Update By Reset Code DTO:', updateByResetCodeDto);
-    return this.userService.updateByResetCode(updateByResetCodeDto);
   }
 }

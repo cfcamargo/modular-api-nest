@@ -13,12 +13,15 @@ import { MailService } from 'src/mail/mail.service';
 import { UserRequestDTO } from './dto/user-request.dto';
 import { Prisma } from '@prisma/client';
 import { UpdateByResetCodeDto } from './dto/update-by-reset-code.dto';
+import * as bcrypt from 'bcryptjs';
+import { BcryptService } from 'src/auth/hashing/bcrypt.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly mailService: MailService,
+    private readonly brcryptService: BcryptService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -142,6 +145,11 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('Código de ativação inválido');
     }
+
+    const encryptedPassword = await this.brcryptService.hash(
+      updateByResetCodeDto.password,
+    );
+    updateByResetCodeDto.password = encryptedPassword;
 
     await this.prismaService.user.update({
       where: {
