@@ -55,6 +55,7 @@ export class UserService {
       });
 
       return {
+        user: result,
         statusCode: 201,
         message: 'Usuário criado com sucesso!',
       };

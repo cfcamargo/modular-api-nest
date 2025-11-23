@@ -18,17 +18,15 @@ enum Unit {
 }
 
 enum StockMovementType {
-  BUY
   SELL
   ADJUST_IN
   ADJUST_OUT
-  RETURN
   PRODUCTION
 }
 
 enum SupplierType {
-  CNPJ
-  CPF
+  PJ
+  PF
 }
 
 enum OrderStatus {
@@ -36,7 +34,7 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   COMPLETED
-  SHIPPED
+  SHIPMENT
   CANCELLED
 }
 
@@ -45,68 +43,64 @@ enum OrderStatus {
 // =================================================================
 
 model User {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   fullName      String
-  email         String   @unique
-  document      String?  @unique
+  email         String    @unique
+  document      String?   @unique
   phone         String?
   password      String?
-  role          Int?     @default(2)
-  status        Int?     @default(3)
-  activationKey String?  @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  role          Int?      @default(2)
+  status        Int?      @default(3)
+  activationKey String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   avatarURL     String?
+  products      Product[]
 }
 
-// model Product {
-//   id            String   @id @default(cuid())
-//   name          String
-//   brand         String
-//   unit          Unit
-//   description   String?
-//   status        Int
-//   marginPercent Decimal? @db.Decimal(5, 2)
-//   stockOnHand   Decimal  @default(0) @db.Decimal(14, 4)
-//   avgUnitCost   Decimal  @default(0) @db.Decimal(14, 6)
-//   createdAt     DateTime @default(now())
-//   updatedAt     DateTime @updatedAt
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  unit        Unit
+  description String?
+  status      Int
+  price       Decimal  @db.Decimal(14, 2)
+  stockOnHand Decimal  @default(0) @db.Decimal(14, 4)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-//   // quem atualizou
-//   updatedBy     String?
-//   updatedByUser User?   @relation("ProductUpdatedBy", fields: [updatedBy], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+}
 
-//   MovementItem MovementItem[]
-//   OrderItem    OrderItem[]
-// }
+model Client {
+  id       String       @id @default(cuid())
+  type     SupplierType @default(PF)
+  name     String
+  document String       @unique
+  email    String?      @unique
+  phone    String?
+  status   Int          @default(1)
 
-// model Supplier {
-//   id          String       @id @default(cuid())
-//   type        SupplierType @default(CNPJ)
-//   name        String
-//   fantasyName String?
-//   document    String       @unique
-//   createdAt   DateTime     @default(now())
-//   updatedAt   DateTime     @updatedAt
-//   status      Int          @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-//   stockMovements Movement[]
-// }
+  address Address?
+}
 
-// model Client {
-//   id       String       @id @default(cuid())
-//   type     SupplierType @default(CPF)
-//   name     String
-//   document String       @unique
-//   email    String?      @unique
-//   phone    String?
-//   status   Int          @default(1)
+model Address {
+  id           String  @id @default(cuid())
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   orders Order[]
-// }
+  clientId String? @unique
+  client   Client? @relation(fields: [clientId], references: [id])
+}
 
 // model Movement {
 //   id           String            @id @default(cuid())
