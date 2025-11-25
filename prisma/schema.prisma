@@ -69,8 +69,9 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user   User?   @relation(fields: [userId], references: [id])
-  userId String?
+  user             User?             @relation(fields: [userId], references: [id])
+  userId           String?
+  productionOrders ProductionOrder[]
 }
 
 model Client {
@@ -102,90 +103,26 @@ model Address {
   client   Client? @relation(fields: [clientId], references: [id])
 }
 
-// model Movement {
-//   id           String            @id @default(cuid())
-//   type         StockMovementType
-//   movementDate DateTime          @default(now())
+enum ProductionStatus {
+  PENDING // Ordem Realizada
+  IN_PRODUCTION // Em Fabricação
+  CONFERENCE // Conferência
+  COMPLETED // Pronto (Gera Estoque)
+  CANCELLED // Cancelada (Não gera estoque, encerra o fluxo)
+}
 
-//   userId String
-//   user   User   @relation("StockMovementUser", fields: [userId], references: [id])
+model ProductionOrder {
+  id   String @id @default(uuid())
+  code Int    @default(autoincrement())
 
-//   supplierId String?
-//   supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
-//   // lado inverso da relação 1:1 com Order
-//   // (quem tem a FK é o Order)
-//   order Order? @relation("OrderStockMovement")
+  quantity Int
+  deadline DateTime
 
-//   notes String?        @db.Text
-//   items MovementItem[]
+  status ProductionStatus @default(PENDING)
 
-//   @@index([type, movementDate])
-// }
-
-// model MovementItem {
-//   id String @id @default(cuid())
-
-//   movementId String
-//   movement   Movement @relation(fields: [movementId], references: [id])
-
-//   productId String
-//   product   Product @relation(fields: [productId], references: [id])
-
-//   quantity  Decimal  @db.Decimal(10, 4)
-//   costPrice Decimal? @db.Decimal(10, 2)
-//   salePrice Decimal? @db.Decimal(10, 2)
-
-//   @@unique([movementId, productId])
-//   @@index([productId])
-// }
-
-// model Order {
-//   id String @id @default(cuid())
-
-//   clientId String
-//   client   Client @relation(fields: [clientId], references: [id])
-
-//   userId String
-//   user   User   @relation("SalesUserOrders", fields: [userId], references: [id])
-
-//   // data que vem do front
-//   orderDate DateTime @default(now())
-
-//   status OrderStatus @default(DRAFT)
-//   notes  String?     @db.Text
-
-//   // valores opcionais
-//   freight  Decimal? @db.Decimal(14, 2)
-//   discount Decimal? @db.Decimal(14, 2)
-
-//   // relação 1:1 com movimento de saída
-//   movementId    String?   @unique
-//   stockMovement Movement? @relation("OrderStockMovement", fields: [movementId], references: [id])
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   items OrderItem[]
-
-//   @@index([clientId])
-//   @@index([userId])
-//   @@index([status])
-// }
-
-// model OrderItem {
-//   id      Int    @id @default(autoincrement())
-//   orderId String
-//   order   Order  @relation(fields: [orderId], references: [id])
-
-//   productId String
-//   product   Product @relation(fields: [productId], references: [id])
-
-//   quantity   Decimal @db.Decimal(10, 4)
-//   unitPrice  Decimal @db.Decimal(14, 2)
-//   totalPrice Decimal @db.Decimal(14, 2)
-
-//   unitCostAtSale Decimal? @db.Decimal(14, 6)
-
-//   @@unique([orderId, productId])
-// }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

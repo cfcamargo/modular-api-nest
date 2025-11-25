@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ClientModule } from 'src/clients/client.module';
 import { ProductModule } from 'src/products/product.module';
+import { ProductionModule } from 'src/production/production.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ProductModule } from 'src/products/product.module';
     AuthModule,
     ClientModule,
     ProductModule,
+    ProductionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
