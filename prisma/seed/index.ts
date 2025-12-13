@@ -17,7 +17,7 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@grupomodularms.com' },
-    update: {}, // não atualiza, só cria se não existir
+    update: {},
     create: {
       fullName: 'Administrador',
       email: 'admin@grupomodularms.com',
@@ -29,7 +29,17 @@ async function main() {
     },
   });
 
+  const client = await prisma.client.create({
+    data: {
+      document: '000000000',
+      name: 'Cliente Final',
+      email: 'cliente@cliente.com',
+      type: 'PF',
+    },
+  });
+
   console.log('Admin user created:', admin);
+  console.log('Client Default created:', client);
 }
 
 main()
