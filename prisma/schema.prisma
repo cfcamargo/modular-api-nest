@@ -90,6 +90,7 @@ model Address {
 }
 
 enum ProductionStatus {
+  DRAFT
   PENDING // Ordem Realizada
   IN_PRODUCTION // Em Fabricação
   CONFERENCE // Conferência

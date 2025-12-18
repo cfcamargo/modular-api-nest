@@ -12,7 +12,7 @@ import {
 import { OrderStatus } from '@prisma/client';
 
 export class OrderItemDto {
-  @IsUUID()
+  @IsString()
   productId: string;
 
   @IsNumber()
@@ -25,10 +25,10 @@ export class OrderItemDto {
 }
 
 export class CreateOrderDto {
-  @IsUUID()
+  @IsString()
   clientId: string;
 
-  @IsUUID()
+  @IsString()
   userId: string;
 
   @IsString()
