@@ -7,6 +7,7 @@ import { ClientModule } from 'src/clients/client.module';
 import { ProductModule } from 'src/products/product.module';
 import { ProductionModule } from 'src/production/production.module';
 import { OrdersModule } from 'src/order/order.module';
+import { DashboardModule } from 'src/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { OrdersModule } from 'src/order/order.module';
     ProductModule,
     ProductionModule,
     OrdersModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

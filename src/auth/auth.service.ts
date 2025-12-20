@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BcryptService } from './hashing/bcrypt.service';
+import { ChangePasswordDTO } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -108,5 +109,39 @@ export class AuthService {
     });
 
     return this.createToken(user);
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDTO) {
+    const { currentPassword, newPassword } = dto;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado.');
+    }
+
+    const passwordIsValid = await this.brcryptService.compare(
+      currentPassword,
+      user.password!,
+    );
+
+    if (!passwordIsValid) {
+      throw new UnauthorizedException('Senha atual incorreta.');
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password: newPassword,
+      },
+    });
+
+    return true;
   }
 }
