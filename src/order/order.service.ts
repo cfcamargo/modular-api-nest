@@ -10,27 +10,34 @@ import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
 import { OrderRequestDTO } from './dto/order-request.dto';
+import { StatusEnum } from 'src/utils/enums/StatusEnum';
 
 @Injectable()
 @UseGuards(AuthGuard('jwt'))
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateOrderDto) {
-    let totalItems = 0;
+ async create(dto: CreateOrderDto) {
+    let totalItemsCount = 0;
+    let itemsTotalValue = 0;
 
     const itemsData = dto.items.map((item) => {
-      const subtotal = item.quantity;
-      totalItems += subtotal;
+      const lineSubtotal = item.quantity * item.price;
+
+      totalItemsCount += item.quantity;
+
+      itemsTotalValue += lineSubtotal;
+
       return {
         productId: item.productId,
         quantity: item.quantity,
         price: item.price,
-        subtotal: subtotal,
+        subtotal: lineSubtotal,
       };
     });
 
-    const finalTotal = totalItems + dto.shippingCost - dto.totalDiscount;
+
+    const finalTotal = itemsTotalValue + dto.shippingCost - dto.totalDiscount;
 
     return await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
@@ -41,19 +48,21 @@ export class OrdersService {
           status: dto.status,
           shippingCost: dto.shippingCost,
           totalDiscount: dto.totalDiscount,
-          totalItems: totalItems,
-          finalTotal: finalTotal < 0 ? 0 : finalTotal,
+          totalItems: totalItemsCount, 
+          finalTotal: finalTotal < 0 ? 0 : finalTotal, 
+          
           items: { create: itemsData },
-          userId: dto.userId,
+          
+          userId: dto.userId, 
         },
         include: { items: true },
       });
 
-      if (dto.status === OrderStatus.CONFIRMED) {
+      if (dto.status === OrderStatus.CONFIRMED) { 
         for (const item of dto.items) {
           await tx.product.update({
             where: { id: item.productId },
-            data: { stockOnHand: { decrement: item.quantity } },
+            data: { stockOnHand: { decrement: item.quantity } }, 
           });
         }
       }
