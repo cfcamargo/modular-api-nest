@@ -287,4 +287,43 @@ export class OrdersService {
       },
     });
   }
+
+  async cancelOrder(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!order) throw new NotFoundException('Pedido não encontrado.');
+
+      if (order.status === OrderStatus.CANCELLED) {
+        throw new BadRequestException('Pedido já está cancelado.');
+      }
+
+      if (order.status === OrderStatus.CONFIRMED) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockOnHand: { increment: item.quantity } },
+          });
+        }
+      }
+      
+      return await tx.order.update({
+        where: { id: order.id },
+        data: { status: OrderStatus.CANCELLED },
+      });
+    });
+  }
+
+  async changeStatus(id: string, status: OrderStatus) {
+    console.log(id)
+    return this.prisma.order.update({
+      where: { id },
+      data: { 
+        status,
+       },
+    });
+  }
 }
