@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { AuthLoginDTO } from './dto/auth-login.dto';
 import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDTO } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -42,7 +43,12 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   getMe(@Req() req) {
-    console.log('req', req.user);
     return req.user;
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-password')
+  changePassword(@Req() req, @Body() changePasswordDto: ChangePasswordDTO) {
+    return this.authService.changePassword(req.user.id, changePasswordDto);
   }
 }

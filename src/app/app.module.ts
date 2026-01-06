@@ -1,23 +1,27 @@
-import { Module } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { AuthModule } from "../auth/auth.module";
-import { ConfigModule } from "@nestjs/config";
-import { ProductModule } from "src/product/product.module";
-import { StockModule } from "src/stock/stock.module";
-import { SupplierModule } from "src/supplier/supplier.module";
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from '../auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
+import { ClientModule } from 'src/clients/client.module';
+import { ProductModule } from 'src/products/product.module';
+import { ProductionModule } from 'src/production/production.module';
+import { OrdersModule } from 'src/order/order.module';
+import { DashboardModule } from 'src/dashboard/dashboard.module';
 
 @Module({
-	imports: [
-		ConfigModule.forRoot({
-			isGlobal: true,
-		}),
-		AuthModule,
-		ProductModule,
-		StockModule,
-		SupplierModule,
-	],
-	controllers: [AppController],
-	providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    AuthModule,
+    ClientModule,
+    ProductModule,
+    ProductionModule,
+    OrdersModule,
+    DashboardModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
