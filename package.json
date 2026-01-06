@@ -22,7 +22,7 @@
     "copy:templates": "cpx \"src/mail/templates/**/*\" dist/src/mail/templates",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "db:seed": "ts-node --transpile-only prisma/seed/index.ts"
+    "db:seed": "ts-node --swc prisma/seed/index.ts"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
