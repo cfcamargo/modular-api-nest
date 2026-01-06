@@ -29,7 +29,7 @@ COPY --from=builder /app/dist ./dist
 
 # permitir scripts de build também no install de prod
 ENV PNPM_ALLOW_SCRIPTS="@prisma/client prisma @prisma/engines @swc/core esbuild bcrypt core-js @nestjs/core"
-RUN pnpm fetch --prod && pnpm install --offline --prod && pnpm add -g ts-node typescript
+RUN pnpm fetch --prod && pnpm install --offline --prod && pnpm add ts-node typescript
 
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
