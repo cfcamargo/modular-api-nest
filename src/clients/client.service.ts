@@ -31,6 +31,9 @@ export class ClientService {
         where,
         skip,
         take: Number(perPage),
+        orderBy: {
+          name: 'asc',
+        },
       }),
 
       this.prismaService.client.count({ where }),

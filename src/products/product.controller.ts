@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -12,6 +13,7 @@ import { ProductService } from './product.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ProductRequestDTO } from './dto/product-request.dto';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/uptade-product.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('products')
@@ -36,5 +38,10 @@ export class ProductController {
   @Delete(':id')
   destroy(@Param('id') id: string) {
     return this.productService.remove(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() createProductDto: UpdateProductDto) {
+    return this.productService.update(id, createProductDto);
   }
 }
