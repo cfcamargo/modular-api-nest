@@ -122,6 +122,7 @@ enum OrderStatus {
   SHIPMENT // Em Entrega (Parcialmente entregue)
   DONE // Concluído (Tudo entregue)
   CANCELLED // Cancelado
+  PENDING // Pendente
 }
 
 model Order {

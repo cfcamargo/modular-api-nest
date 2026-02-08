@@ -14,6 +14,8 @@ export class ProductionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateProductionOrderDto) {
+    console.log(dto);
+
     const product = await this.prisma.product.findUnique({
       where: { id: dto.productId },
     });
@@ -22,11 +24,14 @@ export class ProductionService {
       throw new NotFoundException('Produto não encontrado.');
     }
 
+    const deadline = new Date(dto.deadline);
+    deadline.setUTCHours(12);
+
     return this.prisma.productionOrder.create({
       data: {
         productId: dto.productId,
         quantity: dto.quantity,
-        deadline: new Date(dto.deadline),
+        deadline,
         status: ProductionStatus.PENDING,
       },
     });

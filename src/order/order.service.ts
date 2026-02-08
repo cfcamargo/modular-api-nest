@@ -318,11 +318,69 @@ export class OrdersService {
   }
 
   async changeStatus(id: string, status: OrderStatus) {
-    return this.prisma.order.update({
-      where: { id },
-      data: { 
-        status,
-       },
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!order) {
+        throw new NotFoundException('Pedido não encontrado.');
+      }
+
+      const previousStatus = order.status;
+
+      // Se o status for igual, não faz nada
+      if (previousStatus === status) {
+        return order;
+      }
+
+      // Lógica de Estoque
+      // DRAFT -> CONFIRMED (Deduz Estoque)
+      const isStarting =
+        previousStatus === OrderStatus.DRAFT ||
+        previousStatus === OrderStatus.CANCELLED;
+
+      const isConfirming =
+        status === OrderStatus.CONFIRMED ||
+        status === OrderStatus.SHIPMENT ||
+        status === OrderStatus.DONE;
+
+      // Se estava em rascunho/cancelado e agora está confirmando -> BAIXA ESTOQUE
+      if (isStarting && isConfirming) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockOnHand: { decrement: item.quantity } },
+          });
+        }
+      }
+
+      // CONFIRMED -> DRAFT/CANCELLED (Devolve Estoque)
+      const wasConfirmed =
+        previousStatus === OrderStatus.CONFIRMED ||
+        previousStatus === OrderStatus.SHIPMENT ||
+        previousStatus === OrderStatus.DONE;
+
+      const isCancelling =
+        status === OrderStatus.DRAFT || status === OrderStatus.CANCELLED;
+
+      // Se estava confirmado e agora está cancelando/voltando pra rascunho -> DEVOLVE ESTOQUE
+      if (wasConfirmed && isCancelling) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockOnHand: { increment: item.quantity } },
+          });
+        }
+      }
+
+      return tx.order.update({
+        where: { id },
+        data: {
+          status,
+        },
+      });
     });
   }
 }
