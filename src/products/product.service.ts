@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { StatusEnum } from 'src/utils/enums/StatusEnum';
+import { UpdateProductDto } from './dto/uptade-product.dto';
 
 @Injectable()
 export class ProductService {
@@ -32,6 +33,9 @@ export class ProductService {
         where,
         skip,
         take: Number(perPage),
+        orderBy: {
+          name: 'asc',
+        },
       }),
 
       this.prismaService.product.count({ where }),
@@ -108,5 +112,27 @@ export class ProductService {
     });
 
     return { status: 200, message: 'ok' };
+  }
+
+  async update(id: string, request: UpdateProductDto) {
+    const product = await this.prismaService.product.findUnique({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Produto não encontrado.');
+    }
+
+    const { initialStock, ...data } = request;
+
+    const response = await this.prismaService.product.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(initialStock !== undefined && { stockOnHand: initialStock }),
+      },
+    });
+
+    return { product: response };
   }
 }

@@ -1,7 +1,7 @@
 import { Unit } from '@prisma/client';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateProductDto {
+export class UpdateProductDto {
   @IsString()
   name: string;
 
@@ -13,9 +13,6 @@ export class CreateProductDto {
 
   @IsNumber()
   installmentPrice: number;
-
-  @IsString()
-  unit: Unit;
 
   @IsNumber()
   @IsOptional()

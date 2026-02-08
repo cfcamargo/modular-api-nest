@@ -318,7 +318,6 @@ export class OrdersService {
   }
 
   async changeStatus(id: string, status: OrderStatus) {
-    console.log(id)
     return this.prisma.order.update({
       where: { id },
       data: { 

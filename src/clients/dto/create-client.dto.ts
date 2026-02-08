@@ -59,6 +59,10 @@ export class CreateClientDto {
   @IsNotEmpty()
   document: string;
 
+  @IsString()
+  @IsOptional()
+  ie?: string;
+
   @IsEmail()
   @IsOptional()
   email?: string;
