@@ -58,7 +58,10 @@ export class OrdersService {
         include: { items: true },
       });
 
-      if (dto.status === OrderStatus.CONFIRMED) { 
+      if (
+        dto.status === OrderStatus.CONFIRMED ||
+        dto.status === OrderStatus.PENDING
+      ) { 
         for (const item of dto.items) {
           await tx.product.update({
             where: { id: item.productId },
@@ -344,7 +347,8 @@ export class OrdersService {
       const isConfirming =
         status === OrderStatus.CONFIRMED ||
         status === OrderStatus.SHIPMENT ||
-        status === OrderStatus.DONE;
+        status === OrderStatus.DONE ||
+        status === OrderStatus.PENDING;
 
       // Se estava em rascunho/cancelado e agora está confirmando -> BAIXA ESTOQUE
       if (isStarting && isConfirming) {
@@ -360,10 +364,12 @@ export class OrdersService {
       const wasConfirmed =
         previousStatus === OrderStatus.CONFIRMED ||
         previousStatus === OrderStatus.SHIPMENT ||
-        previousStatus === OrderStatus.DONE;
+        previousStatus === OrderStatus.DONE ||
+        previousStatus === OrderStatus.PENDING;
 
       const isCancelling =
-        status === OrderStatus.DRAFT || status === OrderStatus.CANCELLED;
+        status === OrderStatus.DRAFT ||
+        status === OrderStatus.CANCELLED;
 
       // Se estava confirmado e agora está cancelando/voltando pra rascunho -> DEVOLVE ESTOQUE
       if (wasConfirmed && isCancelling) {
