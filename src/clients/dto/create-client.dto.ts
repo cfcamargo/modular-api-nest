@@ -56,14 +56,14 @@ export class CreateClientDto {
   type?: SupplierType;
 
   @IsString()
-  @IsNotEmpty()
-  document: string;
+  @IsOptional()
+  document?: string;
 
   @IsString()
   @IsOptional()
   ie?: string;
 
-  @IsEmail()
+  @IsString()
   @IsOptional()
   email?: string;
 

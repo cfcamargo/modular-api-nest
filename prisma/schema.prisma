@@ -11,6 +11,8 @@ enum Unit {
   UN
   M2
   KG
+  KM
+  HR
 }
 
 enum StockMovementType {
@@ -64,7 +66,7 @@ model Client {
   id       String       @id @default(cuid())
   type     SupplierType @default(PF)
   name     String
-  document String       @unique
+  document String?      @unique
   email    String?      @unique
   phone    String?
   status   Int          @default(1)
