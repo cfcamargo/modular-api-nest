@@ -2,6 +2,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ProductRequestDTO } from './dto/product-request.dto';
 import { Prisma } from '@prisma/client';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -99,19 +100,36 @@ export class ProductService {
   }
 
   async remove(id: string) {
-    const client = await this.prismaService.product.findUnique({
+    const product = await this.prismaService.product.findUnique({
       where: { id },
+      include: {
+        _count: {
+          select: {
+            productionOrders: true,
+            orderItems: true,
+          },
+        },
+      },
     });
 
-    if (!client) {
-      throw new NotFoundException('Cliente não encontrado.');
+    if (!product) {
+      throw new NotFoundException('Produto não encontrado.');
+    }
+
+    if (
+      product._count.productionOrders > 0 ||
+      product._count.orderItems > 0
+    ) {
+      throw new BadRequestException(
+        'Este produto não pode ser excluído pois possui pedidos ou ordens de produção vinculadas.',
+      );
     }
 
     await this.prismaService.product.delete({
       where: { id },
     });
 
-    return { status: 200, message: 'ok' };
+    return { status: 200, message: 'Produto excluído com sucesso.' };
   }
 
   async update(id: string, request: UpdateProductDto) {

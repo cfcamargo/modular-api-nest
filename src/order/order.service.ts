@@ -264,13 +264,11 @@ export class OrdersService {
 
     // --- 4. Retorno ---
     return {
-      orders: data,
-      meta: {
-        total,
-        page: Number(page),
-        perPage: Number(perPage),
-        lastPage: Math.ceil(total / Number(perPage)),
-      },
+      data,
+      total,
+      page: Number(page),
+      perPage: Number(perPage),
+      lastPage: Math.ceil(total / Number(perPage)),
       counters: {
         totalCount: countAllToday,
         totalDraftsCount: countDraftsToday,

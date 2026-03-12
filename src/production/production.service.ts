@@ -78,6 +78,10 @@ export class ProductionService {
         where,
         skip,
         take: Number(perPage),
+        orderBy: [
+          { status: 'asc' },
+          { createdAt: 'desc' },
+        ],
         include: {
           product: true,
         },
