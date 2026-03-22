@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service'; // Ajuste o import
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
@@ -71,6 +72,75 @@ export class OrdersService {
       }
 
       return order;
+    });
+  }
+
+  async update(id: string, dto: UpdateOrderDto) {
+    return await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!order) throw new NotFoundException('Pedido não encontrado.');
+
+      if (order.status !== OrderStatus.DRAFT) {
+        throw new BadRequestException(
+          'Apenas orçamentos (DRAFT) podem ser atualizados.',
+        );
+      }
+
+      let totalItemsCount = 0;
+      let itemsTotalValue = 0;
+      let itemsDataCreate: {
+        productId: string;
+        quantity: number;
+        price: number;
+        subtotal: number;
+      }[] | undefined = undefined;
+
+      if (dto.items) {
+        itemsDataCreate = dto.items.map((item) => {
+          const lineSubtotal = item.quantity * item.price;
+          totalItemsCount += item.quantity;
+          itemsTotalValue += lineSubtotal;
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: lineSubtotal,
+          };
+        });
+      } else {
+        order.items.forEach((item) => {
+          totalItemsCount += Number(item.quantity);
+          itemsTotalValue += Number(item.subtotal);
+        });
+      }
+
+      const shippingCost = dto.shippingCost !== undefined ? Number(dto.shippingCost) : Number(order.shippingCost);
+      const totalDiscount = dto.totalDiscount !== undefined ? Number(dto.totalDiscount) : Number(order.totalDiscount);
+      const finalTotal = itemsTotalValue + shippingCost - totalDiscount;
+
+      if (dto.items) {
+        await tx.orderItem.deleteMany({ where: { orderId: id } });
+      }
+
+      return await tx.order.update({
+        where: { id },
+        data: {
+          clientId: dto.clientId,
+          userId: dto.userId,
+          address: dto.address,
+          observation: dto.observation,
+          shippingCost: dto.shippingCost,
+          totalDiscount: dto.totalDiscount,
+          totalItems: totalItemsCount,
+          finalTotal: finalTotal < 0 ? 0 : finalTotal,
+          items: dto.items ? { create: itemsDataCreate } : undefined,
+        },
+        include: { items: true },
+      });
     });
   }
 

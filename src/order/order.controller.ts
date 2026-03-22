@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersService } from './order.service';
 import { OrderRequestDTO } from './dto/order-request.dto';
 import { OrderStatus } from '@prisma/client';
@@ -19,6 +20,14 @@ export class OrdersController {
   @Post(':id')
   cancel(@Param('id') id: string) {
     return this.ordersService.cancelOrder(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateOrderDto: UpdateOrderDto,
+  ) {
+    return this.ordersService.update(id, updateOrderDto);
   }
 
   @Get()
