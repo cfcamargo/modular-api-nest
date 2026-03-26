@@ -22,6 +22,13 @@ export class OrdersController {
     return this.ordersService.cancelOrder(id);
   }
 
+  @Patch('/status')
+  changeStatus(
+    @Body() dto: ChangeStatusDto,
+  ) {
+    return this.ordersService.changeStatus(dto.id, dto.status as OrderStatus);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -48,10 +55,4 @@ export class OrdersController {
     return this.ordersService.createShipment(id, createShipmentDto);
   }
 
-  @Patch('/status')
-  changeStatus(
-    @Body() dto: ChangeStatusDto,
-  ) {
-    return this.ordersService.changeStatus(dto.id, dto.status as OrderStatus);
-  } 
 }
